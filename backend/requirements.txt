@@ -1,0 +1,6 @@
+fastapi[all]
+uvicorn[standard]
+pymongo==3.11.3
+pydantic
+pandas
+numpy
