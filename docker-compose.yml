@@ -15,22 +15,22 @@ services:
     networks:
       - mongo-net
 
-  mongo-express:
-    image: mongo-express:0.54.0
-    container_name: mongo-express
-    depends_on:
-      - mongo
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_OPTIONS_EDITORTHEME: ambiance
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
-    networks:
-      - mongo-net
+  # mongo-express:
+  #   image: mongo-express:0.54.0
+  #   container_name: mongo-express
+  #   depends_on:
+  #     - mongo
+  #   restart: always
+  #   ports:
+  #     - 8081:8081
+  #   environment:
+  #     ME_CONFIG_MONGODB_SERVER: mongo
+  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
+  #     ME_CONFIG_MONGODB_ADMINPASSWORD: example
+  #     ME_CONFIG_OPTIONS_EDITORTHEME: ambiance
+  #     ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+  #   networks:
+  #     - mongo-net
 
   backend:
     build:
