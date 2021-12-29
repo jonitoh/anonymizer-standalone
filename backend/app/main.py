@@ -1,12 +1,23 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
 from pymongo import MongoClient
 import os
 from urllib.parse import quote_plus
 
-
+origins = [
+    "http://0.0.0.0:3000",
+    "http://localhost:3000"
+]
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 mongo_client = None
 
 

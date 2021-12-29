@@ -5,3 +5,5 @@ FARM stack in development
 cf. https://medium.com/codex/farm-stack-with-docker-compose-part-1-mongodb-54cc65e31636
 -- add backend
 --- backend is FastApi
+-- add frontend
+--- frontend is React
