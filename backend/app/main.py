@@ -1,16 +1,28 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
-from pymongo import MongoClient
 import os
 from urllib.parse import quote_plus
+
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pymongo import MongoClient
+
+from .dependencies import get_query_token, get_token_header
+
+from .internal import admin
+from .routers import datasets
 
 origins = [
     "http://0.0.0.0:3000",
     "http://localhost:3000"
 ]
-app = FastAPI()
+app = FastAPI()#(dependencies=[Depends(get_query_token)])
+app.include_router(datasets.router)
+app.include_router(
+    admin.router,
+    prefix="/admin",
+    tags=["admin"],
+    dependencies=[],#Depends(get_token_header)],
+    responses={418: {"description": "I'm a teapot"}},
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -19,7 +31,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 mongo_client = None
-
 
 def get_client():
     """
@@ -37,7 +48,6 @@ def get_client():
                                               quote_plus(password), host)
     mongo_client = MongoClient(endpoint, port)
     return mongo_client
-
 
 @app.get('/')
 async def root():
