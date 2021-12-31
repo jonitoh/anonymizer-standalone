@@ -3,6 +3,7 @@ data/mongo
 
 # For a secure package distribution
 .env
+uploads/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
