@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 import random
 from typing import List, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, Json
 from fastapi import APIRouter, HTTPException, UploadFile, File
 
 
@@ -28,14 +28,14 @@ class DatasetName(BaseModel):
     name: str
 
 class MetadataField(BaseModel):
-    field: str
-    type: str
-    info: str
+    variable: str = None
+    type: str = None
+    info: str = None
 
 class Metadata(BaseModel):
     id: str
     dataset_id: str
-    fields: List[MetadataField]
+    variables: List[MetadataField]
 # --- fin
 
 fake_datasets_db = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': f'dataset_{i}.csv'} for i in range(20) ]
@@ -76,8 +76,9 @@ async def delete_dataset(dataset_id: str) -> Dict[str, str]:
 @router.post("/")
 async def create_dataset(
     dataset: UploadFile = File(...),
-    metadata: UploadFile = File(...),# List[MetadataField] = [],
+    metadata: Json[Dict[str, MetadataField]] = None,# workaround so that the metadatafield form field pass through. cf.https://github.com/tiangolo/fastapi/issues/2387 
     name: str = None) -> Dict[str, str]:
+    print("metadata??", metadata)
     # -- dataset
     dataset_message = ""
     # verify if the size is ok
@@ -89,7 +90,6 @@ async def create_dataset(
     if name is None:
         name, _ = os.path.splitext(dataset.filename)
         name = os.path.basename(name)
-    print("name", name)
     # create a document
     # find an id
     available_ids = [ k['id'] for k in fake_datasets_db]
@@ -116,10 +116,14 @@ async def create_dataset(
     #    metadata_message = "Metadata file too heavy"
     # create a document for metadata
     # from csv to metadata or from nada to metadata
-    fields = [{'field': f'Field {i}', 'type': random.choice(['numerical', 'binary', 'categorical']), 'info': 'nope'} for i in range(random.randint(1, 4))]
+    variables = []
+    if metadata is None: # second option: None equivalent inferred by FASTAPI
+        variables = [{'variable': f'Field {i}', 'type': random.choice(['numerical', 'binary', 'categorical']), 'info': 'nope'} for i in range(random.randint(1, 4))]
+    else:
+        variables = metadata
     # find an id
     metadata_id = str(random.randint(0, 10000))
-    document_metadata = {'id': metadata_id, 'dataset_id': chosen_id, 'fields': fields }
+    document_metadata = {'id': metadata_id, 'dataset_id': chosen_id, 'variables': variables }
     print("doc metadata", document_metadata)
     metadata_message = "ok"
     # document metadata in mongo -- DONE
