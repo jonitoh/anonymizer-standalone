@@ -65,9 +65,16 @@ async def get_dataset(dataset_id: str) -> Dataset:
 @router.delete("/{dataset_id}")
 async def delete_dataset(dataset_id: str) -> Dict[str, str]:
     global fake_datasets_db
+    print("dataset_id?", dataset_id)
     if dataset_id not in set([ k['id'] for k in fake_datasets_db ]):
         raise HTTPException(status_code=404, detail="Dataset not found")
+    my_dataset = [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
     fake_datasets_db = [ k for k in fake_datasets_db if k['id'] != dataset_id ]
+    # remove the file
+    if os.path.exists(my_dataset['path']):
+        os.remove(my_dataset['path'])
+    else:
+        print("strange! the path does not exist")
     return {'message': 'ok'}
 
 # No update allowed
@@ -78,6 +85,7 @@ async def create_dataset(
     dataset: UploadFile = File(...),
     metadata: Json[Dict[str, MetadataField]] = None,# workaround so that the metadatafield form field pass through. cf.https://github.com/tiangolo/fastapi/issues/2387 
     name: str = None) -> Dict[str, str]:
+    global fake_datasets_db
     print("metadata??", metadata)
     # -- dataset
     dataset_message = ""
@@ -126,6 +134,7 @@ async def create_dataset(
     document_metadata = {'id': metadata_id, 'dataset_id': chosen_id, 'variables': variables }
     print("doc metadata", document_metadata)
     metadata_message = "ok"
-    # document metadata in mongo -- DONE
+    # document metadata in mongo
+    fake_datasets_db.append(document_dataset)
 
     return {"id": chosen_id, "dataset_message": dataset_message, "metadata_message": metadata_message}
