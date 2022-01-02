@@ -28,14 +28,14 @@ class DatasetName(BaseModel):
     name: str
 
 class MetadataField(BaseModel):
-    variable: str = None
+    input: str = None
     type: str = None
     info: str = None
 
 class Metadata(BaseModel):
     id: str
     dataset_id: str
-    variables: List[MetadataField]
+    inputs: List[MetadataField]
 # --- fin
 
 fake_datasets_db = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': f'dataset_{i}.csv'} for i in range(20) ]
@@ -124,14 +124,14 @@ async def create_dataset(
     #    metadata_message = "Metadata file too heavy"
     # create a document for metadata
     # from csv to metadata or from nada to metadata
-    variables = []
+    inputs = []
     if metadata is None: # second option: None equivalent inferred by FASTAPI
-        variables = [{'variable': f'Field {i}', 'type': random.choice(['numerical', 'binary', 'categorical']), 'info': 'nope'} for i in range(random.randint(1, 4))]
+        inputs = [{'input': f'Field {i}', 'type': random.choice(['numerical', 'binary', 'categorical']), 'info': 'nope'} for i in range(random.randint(1, 4))]
     else:
-        variables = metadata
+        inputs = metadata
     # find an id
     metadata_id = str(random.randint(0, 10000))
-    document_metadata = {'id': metadata_id, 'dataset_id': chosen_id, 'variables': variables }
+    document_metadata = {'id': metadata_id, 'dataset_id': chosen_id, 'inputs': inputs }
     print("doc metadata", document_metadata)
     metadata_message = "ok"
     # document metadata in mongo

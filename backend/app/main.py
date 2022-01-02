@@ -8,7 +8,7 @@ from pymongo import MongoClient
 from .dependencies import get_query_token, get_token_header
 
 from .internal import admin
-from .routers import datasets
+from .routers import datasets, statistics
 
 origins = [
     "http://0.0.0.0:3000",
@@ -16,6 +16,7 @@ origins = [
 ]
 app = FastAPI()#(dependencies=[Depends(get_query_token)])
 app.include_router(datasets.router)
+app.include_router(statistics.router)
 app.include_router(
     admin.router,
     prefix="/admin",
