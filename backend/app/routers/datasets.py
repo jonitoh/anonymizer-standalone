@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import mimetypes
 from datetime import datetime
 import random
@@ -24,7 +25,7 @@ DATETIME_FORMAT_FOR_UPLOAD = "%Y-%m-%d-%H-%M"
 class Dataset(BaseModel):
     id: str
     name: str
-    path: str
+    path: Path
 
 class DatasetName(BaseModel):
     id: str
@@ -41,9 +42,10 @@ class Metadata(BaseModel):
     inputs: List[MetadataField]
 # --- fin
 
-fake_datasets_db = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': f'dataset_{i}.csv'} for i in range(20) ]
+fake_datasets_db: List[Dataset] = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': Path(f'dataset_{i}.csv')} for i in range(20) ]
 
 def retrieve_dataset(dataset_id: str):
+    # TODO: to remove
     if dataset_id not in set([ k['id'] for k in fake_datasets_db]):
         return None #raise Error("Dataset not found")
     document = [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
@@ -51,11 +53,7 @@ def retrieve_dataset(dataset_id: str):
 
 DEFAULT_MEDIA_TYPE: str = 'application/octet-stream'
 
-MEDIA_TYPE : Dict[str, str] = {
-    "text/csv": "something",
-    'application/octet-stream': "something else",
-}
-def retrieve_file(path: str, media_type: str = None, infer_media_type: bool = False):
+def retrieve_file(path: Path, media_type: str = None, infer_media_type: bool = False):
     """cf. https://fastapi.tiangolo.com/advanced/custom-response/
     cf. https://cloudbytes.dev/snippets/received-return-a-file-from-in-memory-buffer-using-fastapi
     cf. https://stackoverflow.com/questions/61140398/fastapi-return-a-file-response-with-the-output-of-a-sql-query
@@ -69,7 +67,7 @@ def retrieve_file(path: str, media_type: str = None, infer_media_type: bool = Fa
         if media_type is None:
             media_type = DEFAULT_MEDIA_TYPE
     # generate filename
-    filename = 'test_' + os.path.basename(path)
+    filename = 'test_' + path.name
     # generator based on our file
     def iterfile(): 
         with open(path, mode="rb") as file_like: 
@@ -120,8 +118,8 @@ async def delete_dataset(dataset_id: str) -> Dict[str, str]:
     my_dataset = [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
     fake_datasets_db = [ k for k in fake_datasets_db if k['id'] != dataset_id ]
     # remove the file
-    if os.path.exists(my_dataset['path']):
-        os.remove(my_dataset['path'])
+    if Path(my_dataset['path']).exists():
+        Path(my_dataset['path']).unlink()
     else:
         print("strange! the path does not exist")
     return {'message': 'ok'}
@@ -138,6 +136,7 @@ async def create_dataset(
     print("metadata??", metadata)
     # -- dataset
     dataset_message = ""
+    filename = Path(dataset.filename)
     # verify if the size is ok
     # size = ????
     # print("size", size)
@@ -145,20 +144,19 @@ async def create_dataset(
     #     raise HTTPException(status_code=404, detail="Dataset file too heavy")
     # check for a valid Name
     if name is None:
-        name, _ = os.path.splitext(dataset.filename)
-        name = os.path.basename(name)
+        name = filename.name
     # create a document
     # find an id
     available_ids = [ k['id'] for k in fake_datasets_db]
     chosen_id = str(random.choice([e for e in range(10000) if e not in available_ids ]))
     # save dataset in local storage
-    path = os.path.realpath(__file__).split(os.path.sep)[:-3] + [
+    path = Path(
+        Path.cwd(),
         UPLOAD_FOLDER,
-        f'{datetime.now().strftime(DATETIME_FORMAT_FOR_UPLOAD)}___{dataset.filename}'
-    ]
-    path = os.path.sep.join(path)
-
-    document_dataset = {'id': chosen_id, 'name': name, 'path': path}
+        f'{datetime.now().strftime(DATETIME_FORMAT_FOR_UPLOAD)}___{filename}'
+    )
+    #print("######", path)
+    document_dataset = {'id': chosen_id, 'name': name, 'path': Path(path)}
     print("doc dataset", document_dataset)
     dataset_message = "ok"
     # document in mongo -- DONE
