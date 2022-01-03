@@ -1,9 +1,12 @@
 import os
+import mimetypes
 from datetime import datetime
 import random
-from typing import List, Dict
+from typing import List, Dict, Union
+import pandas as pd
 from pydantic import BaseModel, Json
 from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 
 
 #from ..dependencies import get_token_header
@@ -40,7 +43,48 @@ class Metadata(BaseModel):
 
 fake_datasets_db = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': f'dataset_{i}.csv'} for i in range(20) ]
 
+def retrieve_dataset(dataset_id: str):
+    if dataset_id not in set([ k['id'] for k in fake_datasets_db]):
+        return None #raise Error("Dataset not found")
+    document = [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
+    return pd.read_csv(document['path'])
 
+DEFAULT_MEDIA_TYPE: str = 'application/octet-stream'
+
+MEDIA_TYPE : Dict[str, str] = {
+    "text/csv": "something",
+    'application/octet-stream': "something else",
+}
+def retrieve_file(path: str, media_type: str = None, infer_media_type: bool = False):
+    """cf. https://fastapi.tiangolo.com/advanced/custom-response/
+    cf. https://cloudbytes.dev/snippets/received-return-a-file-from-in-memory-buffer-using-fastapi
+    cf. https://stackoverflow.com/questions/61140398/fastapi-return-a-file-response-with-the-output-of-a-sql-query
+    """
+    # check path is ok
+    if path is None:
+        return "no"
+    # check media_type
+    if media_type is None or infer_media_type:
+        media_type, _ = mimetypes.guess_type(path)
+        if media_type is None:
+            media_type = DEFAULT_MEDIA_TYPE
+    # generate filename
+    filename = 'test_' + os.path.basename(path)
+    # generator based on our file
+    def iterfile(): 
+        with open(path, mode="rb") as file_like: 
+            yield from file_like
+
+    response = StreamingResponse(
+        content=iterfile(),
+        media_type=media_type,
+    )
+
+    response.headers["Content-Disposition"] = f"attachment;filename={filename}"
+    response.headers['Access-Control-Expose-Headers'] = 'Content-Disposition'
+
+    return response
+ 
 @router.get("/")
 async def get_datasets(limit: int = 3) -> List[Dataset]:
     if limit == -1:
@@ -57,10 +101,15 @@ async def get_size() -> Dict[str, int]:
     return { 'size': len(fake_datasets_db) }
 
 @router.get("/{dataset_id}")
-async def get_dataset(dataset_id: str) -> Dataset:
+async def get_dataset(dataset_id: str, only_file: bool = False) -> Union[Dataset, str]:
     if dataset_id not in set([ k['id'] for k in fake_datasets_db]):
         raise HTTPException(status_code=404, detail="Dataset not found")
-    return [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
+    document = [ k for k in fake_datasets_db if k['id'] == dataset_id ][0]
+    if only_file:
+        return retrieve_file(document["path"])
+    else:
+        return document
+ 
 
 @router.delete("/{dataset_id}")
 async def delete_dataset(dataset_id: str) -> Dict[str, str]:
