@@ -7,30 +7,33 @@ from pymongo import MongoClient
 
 from .dependencies import get_query_token, get_token_header
 
-from .internal import admin
-from .routers import datasets, statistics
+from .internal import api_internal
+from .routers import api_router
 
-origins = [
+ORIGINS = [
     "http://0.0.0.0:3000",
     "http://localhost:3000"
 ]
-app = FastAPI()#(dependencies=[Depends(get_query_token)])
-app.include_router(datasets.router)
-app.include_router(statistics.router)
-app.include_router(
-    admin.router,
-    prefix="/admin",
-    tags=["admin"],
-    dependencies=[],#Depends(get_token_header)],
-    responses={418: {"description": "I'm a teapot"}},
-)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+PROJECT_NAME = "Anonymizer standalone"
+API_VERSION_URL = "/v1"
+
+app = FastAPI(
+    title=PROJECT_NAME,
+    openapi_url=f"{API_VERSION_URL}/openapi.json",
+)#(dependencies=[Depends(get_query_token)])
+
+if ORIGINS:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
+app.include_router(api_router, prefix=API_VERSION_URL)
+app.include_router(api_internal, prefix=API_VERSION_URL)
+
 mongo_client = None
 
 def get_client():

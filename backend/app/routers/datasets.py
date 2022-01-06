@@ -5,7 +5,7 @@ from datetime import datetime
 import random
 from typing import List, Dict, Union
 import pandas as pd
-from pydantic import BaseModel, Json
+from pydantic import BaseModel, Json, Field
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 
@@ -34,7 +34,7 @@ class DatasetName(BaseModel):
 class MetadataField(BaseModel):
     input: str = None
     type: str = None
-    info: str = None
+    info: str = Field(None, description="free text")
 
 class Metadata(BaseModel):
     id: str
@@ -83,8 +83,11 @@ def retrieve_file(path: Path, media_type: str = None, infer_media_type: bool = F
 
     return response
  
-@router.get("/")
+@router.get("/", summary="summary", response_description="the wanted dataset")
 async def get_datasets(limit: int = 3) -> List[Dataset]:
+    """
+    RETRIEVE DATASET
+    """
     if limit == -1:
         return fake_datasets_db
     else:

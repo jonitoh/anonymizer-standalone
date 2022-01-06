@@ -1,0 +1,1 @@
+"""The models.py file will contain all our models that extend from the SQLAlchemy Base class we defined in db.py We will create that file now with an example User model."""

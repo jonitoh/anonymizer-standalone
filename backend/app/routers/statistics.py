@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional, Type
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, Depends
 
 
@@ -46,7 +46,7 @@ class Statistic(BaseModel):
     info: str
 
 class Correlation(Statistic):
-    reference: str
+    reference: str = Field(..., title="reference to lookup in case of ambiguity")
 
 # --- fin
 AVAILABLE_STATISTICS: List[Statistic] = [
@@ -58,8 +58,6 @@ AVAILABLE_CORRELATIONS: List[Correlation] = [
     { "name": "pearson", "info": "", "reference": "" },
     { "name": "other", "info": "", "reference": "" },
 ]
-
-fake_datasets_db = [ {'id': f"{i}", 'name': f"dataset {i}", 'path': f'dataset_{i}.csv'} for i in range(20) ]
 
 @router.get("/")
 async def root() -> Dict[str, Any]:
@@ -82,8 +80,8 @@ async def get_type(inputs: List[str] = Depends(parse_list(class_type=str)) ) -> 
         return {"message": "Type for all inputs"}
 
 @router.get("/describe/")
-async def describe(inputs: str = None) -> Dict[str, Any]:
-    # do stuff inputs should be List[str]
+async def describe(inputs: List[str] = Depends(parse_list(class_type=str, default=None))) -> Dict[str, Any]:
+    # do stuff
     if inputs is None:
         return {"message": "Describe all the data"}
     else:

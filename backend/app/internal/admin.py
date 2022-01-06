@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 
-
-router = APIRouter()
-
+router = APIRouter(
+    prefix="/admin",
+    tags=["admin"],
+    responses={418: {"description": "I'm a teapot"}},
+)
 
 
 @router.post("/")

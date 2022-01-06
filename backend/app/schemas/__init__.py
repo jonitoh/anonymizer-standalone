@@ -1,0 +1,1 @@
+""" Let’s create the schemas.py file now. This file will contain all our Pydantic models. Under the hood, FastAPI makes use of these models to validate the incoming request body, parse the response body and generate automatic docs for our API. Really cool, at least I think so! """

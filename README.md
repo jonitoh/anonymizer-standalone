@@ -31,7 +31,12 @@ This repository can also be used to create machine learning application.
 ## Setup
 1. Create a file named `.env` at the root based upon `.env.example` file.
 
-2. Open a terminal and run this:
+2. Open a terminal, build the image:
+```bash
+docker-compose build
+```
+
+2. Run the container:
 ```bash
 docker-compose up
 ```
