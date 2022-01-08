@@ -47,6 +47,8 @@ docker-compose up
 
 ## Next steps
 
+Create a shareable environment file instead of three different ones.
+
 Fully test the app (provide a preconfigured `tox` for the backend section).
 
 Add some sample in the database section to fully test the application with example.

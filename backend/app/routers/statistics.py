@@ -12,7 +12,7 @@ def remove_space(s: str):
         shorter_string = shorter_string.replace(space, "")
     return shorter_string
 
-def parse_list(class_type: Type, default: List[Any] = [], separator: str = ","):
+def parse_list(class_type: Type, default: List[Any] = [], separator: str = ",", raise_error: bool = True):
     def parser(inputs: str = None) -> Optional[List[class_type]]:
         if inputs is None:
             return default
@@ -29,7 +29,11 @@ def parse_list(class_type: Type, default: List[Any] = [], separator: str = ","):
             except ValueError as e:
                 errors[idx] = repr(e)
         if errors:
-            raise Exception(f"Could not parse elements: {errors}")
+            if raise_error:
+                raise Exception(f"Could not parse elements: {errors}")
+            else:
+                print(f"Could not parse elements: {errors}.\nDefault value is passed")
+                return default
         else:
             return results
     return parser

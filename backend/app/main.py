@@ -1,42 +1,17 @@
-import os
-from urllib.parse import quote_plus
-
-from fastapi import Depends, FastAPI
+"""Main entry point of the application"""
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 
-from .dependencies import get_query_token, get_token_header
-
-from .internal import api_internal
-from .routers import api_router
-
-ORIGINS = [
-    "http://0.0.0.0:3000",
-    "http://localhost:3000"
-]
-PROJECT_NAME = "Anonymizer standalone"
-API_VERSION_URL = "/v1"
-
-app = FastAPI(
-    title=PROJECT_NAME,
-    openapi_url=f"{API_VERSION_URL}/openapi.json",
-)#(dependencies=[Depends(get_query_token)])
-
-if ORIGINS:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-app.include_router(api_router, prefix=API_VERSION_URL)
-app.include_router(api_internal, prefix=API_VERSION_URL)
+from app.core.config import get_settings
+from app.internal import api_internal
+from app.routers import api_router
 
 mongo_client = None
 
-def get_client():
+def get_client(uri: str):
     """
     Setup a mongo client for the site
     :return:
@@ -44,15 +19,66 @@ def get_client():
     global mongo_client
     if bool(mongo_client):
         return mongo_client
-    host = os.getenv('MONGODB_HOST', '')
-    username = os.getenv('MONGODB_USER', '')
-    password = os.getenv('MONGODB_PASSWORD', '')
-    port = int(os.getenv('MONGODB_PORT', 27017))
-    endpoint = 'mongodb://{0}:{1}@{2}'.format(quote_plus(username),
-                                              quote_plus(password), host)
-    mongo_client = MongoClient(endpoint, port)
-    return mongo_client
+    return MongoClient(uri)
 
-@app.get('/')
-async def root():
-    return {'message': 'Hello World'}
+def create_app() -> FastAPI:
+    """ Complete creation of the app """
+    global mongo_client # TODO: to remove; too messy
+    # Instanciate settings
+    settings = get_settings()
+
+    # Instanciate database
+    mongo_client = get_client(settings.MONGO_DATABASE_URI)
+
+    # Instanciate app
+    app = FastAPI(
+        title=settings.PROJECT_NAME,
+        openapi_url=settings.OPENAPI_URL,
+        debug=settings.DEBUG,
+    )
+
+    # C.O.R.S 
+    if settings.CORS_ORIGINS:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.CORS_ORIGINS,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
+    # Add static folder
+    app.mount(settings.STATIC_FOLDER, StaticFiles(directory="static"), name="static")
+
+    # Include all routers
+    app.include_router(api_router, prefix=settings.API_VERSION_URL)
+
+    # Include all internals
+    app.include_router(api_internal, prefix=settings.API_VERSION_URL)
+
+
+    # HELLO WORLD ROUTE
+    @app.get('/hello-world')
+    def test_route():
+        return {'message': 'Hello World'}
+
+    # ROOT ROUTE
+    @app.get("/", include_in_schema=False)
+    def redirect_to_docs() -> RedirectResponse:
+        return RedirectResponse("/docs")
+
+    """@app.on_event("startup")
+    async def connect_to_database() -> None:
+        database = _get_database()
+        if not database.is_connected:
+            await database.connect()
+
+    @app.on_event("shutdown")
+    async def shutdown() -> None:
+        database = _get_database()
+        if database.is_connected:
+            await database.disconnect()"""
+
+    return app
+
+app = create_app()
