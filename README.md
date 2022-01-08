@@ -55,6 +55,7 @@ Add some sample in the database section to fully test the application with examp
 
 Add the scripts performance the backend tasks (basic stats, correlation and anonymisation) as a pip-able package.
 
-Add an authentification security to the application.
+Add an authentification security to the application (JWT Authentication).
 
 Add a DOC section
+

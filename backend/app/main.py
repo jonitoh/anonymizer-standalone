@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient
 
 from app.core.config import get_settings
-from app.internal import api_internal
-from app.routers import api_router
+from app.internal import create_api_internal
+from app.routers import create_api_router
 
 mongo_client = None
 
@@ -51,10 +51,10 @@ def create_app() -> FastAPI:
     app.mount(settings.STATIC_FOLDER, StaticFiles(directory="static"), name="static")
 
     # Include all routers
-    app.include_router(api_router, prefix=settings.API_VERSION_URL)
+    app.include_router(create_api_router(settings), prefix=settings.API_VERSION_URL)
 
     # Include all internals
-    app.include_router(api_internal, prefix=settings.API_VERSION_URL)
+    app.include_router(create_api_internal(settings), prefix=settings.API_VERSION_URL)
 
 
     # HELLO WORLD ROUTE

@@ -1,12 +1,11 @@
 """Importation of all external settings or configurations to smoothly run the application"""
 import os
-from pathlib import Path
 from functools import lru_cache
 from typing import Union, List, Any, Dict, Optional
 
 from pydantic import BaseSettings, SecretStr, AnyHttpUrl, AnyUrl, validator
 
-from ..utils import parse_list
+#from app.utils import parse_list
 
 
 class Settings(BaseSettings):
@@ -82,8 +81,6 @@ class Settings(BaseSettings):
         env_file_encoding = 'utf-8'
         #env_prefix = ""
         #secrets_dir = "./secrets"
-
-settings = Settings()
 
 @lru_cache()
 def get_settings():

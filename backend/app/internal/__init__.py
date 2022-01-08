@@ -1,5 +1,14 @@
 from fastapi import APIRouter
-from . import admin
+from app.internal import admin
+from app.core.config import Settings
 
-api_internal = APIRouter()
-api_internal.include_router(admin.router)
+def create_api_internal(settings: Settings) -> APIRouter:
+    """ Complete creation of the api internal """
+
+    # Instanciate api
+    api_internal = APIRouter()
+
+    # Include all routers
+    api_internal.include_router(admin.get_router(settings))
+
+    return api_internal
